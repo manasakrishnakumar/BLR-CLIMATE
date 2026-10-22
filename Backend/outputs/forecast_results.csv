@@ -1,0 +1,13 @@
+Z_Rainfall,Rainfall_Label,Z_Temp,Temp_Label,Z_Humidity,Humidity_Label,CES,Climate_Condition,Month
+1.156,Moderate,4.095,Strong,3.372,Strong,2.702,Extreme,1
+1.156,Moderate,0.086,Normal,5.205,Strong,2.05,Extreme,2
+1.145,Moderate,5.178,Strong,5.316,Strong,3.606,Extreme,3
+1.109,Moderate,8.603,Strong,3.587,Strong,4.101,Extreme,4
+1.104,Moderate,7.899,Strong,2.097,Strong,3.441,Extreme,5
+1.09,Moderate,3.325,Strong,1.598,Moderate,1.913,Moderate,6
+1.086,Moderate,1.228,Moderate,2.927,Strong,1.681,Moderate,7
+1.083,Moderate,0.638,Normal,3.143,Strong,1.568,Moderate,8
+1.081,Moderate,0.887,Normal,2.161,Strong,1.347,Moderate,9
+1.079,Moderate,0.169,Normal,2.16,Strong,1.13,Moderate,10
+1.075,Moderate,3.026,Strong,1.354,Moderate,1.744,Moderate,11
+1.064,Moderate,5.606,Strong,0.58,Normal,2.281,Extreme,12

@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-gradient-success text-white mb-4" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+            <div class="card-body text-center">
+                <h3><i class="fas fa-chart-line me-2"></i>Climate Analysis Results</h3>
+                <p class="mb-0">Based on your inputs: {{ "%.1f"|format(rainfall) }}mm rainfall, {{ "%.1f"|format(temperature) }}°C temperature, {{ "%.1f"|format(humidity) }}% humidity</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 1: Forecasted Values -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    1. Forecasted Values (Next {{ total_months }} Months)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" id="forecastTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Month</th>
+                                <th>Rainfall (mm)</th>
+                                <th>Temperature (°C)</th>
+                                <th>Humidity (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for idx in range(forecast_df|length) %}
+                            <tr>
+                                <td><strong>{{ forecast_df.iloc[idx]['Month'] }}</strong></td>
+                                <td>{{ "%.1f"|format(forecast_df.iloc[idx]['Rainfall']) }}</td>
+                                <td>{{ "%.1f"|format(forecast_df.iloc[idx]['Temp_mean']) }}</td>
+                                <td>{{ "%.1f"|format(forecast_df.iloc[idx]['Humidity']) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-chart-trend me-2"></i>
+                    <strong>Trend Analysis:</strong> 
+                    Rainfall is {{ interpretation.rainfall_trend }} | 
+                    Temperature is {{ interpretation.temp_trend }} | 
+                    Humidity is {{ interpretation.humidity_trend }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Anomaly Labels -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    2. Anomaly Labels (Current Conditions)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tint text-primary"></i> Rainfall Anomaly</span>
+                        <span>
+                            <strong>Z = {{ ces_result.Z_Rainfall }}</strong>
+                            <span class="badge {% if ces_result.Rainfall_Condition == 'Strong Anomaly' %}bg-danger{% elif ces_result.Rainfall_Condition == 'Moderate Anomaly' %}bg-warning{% else %}bg-success{% endif %} ms-2">
+                                {{ ces_result.Rainfall_Condition }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-temperature-high text-danger"></i> Temperature Anomaly</span>
+                        <span>
+                            <strong>Z = {{ ces_result.Z_Temperature }}</strong>
+                            <span class="badge {% if ces_result.Temperature_Condition == 'Strong Anomaly' %}bg-danger{% elif ces_result.Temperature_Condition == 'Moderate Anomaly' %}bg-warning{% else %}bg-success{% endif %} ms-2">
+                                {{ ces_result.Temperature_Condition }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-smog text-info"></i> Humidity Anomaly</span>
+                        <span>
+                            <strong>Z = {{ ces_result.Z_Humidity }}</strong>
+                            <span class="badge {% if ces_result.Humidity_Condition == 'Strong Anomaly' %}bg-danger{% elif ces_result.Humidity_Condition == 'Moderate Anomaly' %}bg-warning{% else %}bg-success{% endif %} ms-2">
+                                {{ ces_result.Humidity_Condition }}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Section 3: CES Value & Section 4: Climate Condition Category -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    3 & 4. CES Value & Climate Condition
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-1 fw-bold {% if ces_result.CES >= 2 %}text-danger{% elif ces_result.CES >= 1 %}text-warning{% else %}text-success{% endif %}">
+                    {{ "%.2f"|format(ces_result.CES) }}
+                </div>
+                <p class="lead">Climate Extreme Score</p>
+                <div class="mt-3">
+                    <span class="badge {% if ces_result.Climate_Condition == 'Extreme' %}bg-danger{% elif ces_result.Climate_Condition == 'Moderate' %}bg-warning{% else %}bg-success{% endif %} fs-4 p-3">
+                        <i class="fas fa-thermometer-half me-2"></i>
+                        {{ ces_result.Climate_Condition }} Climate Condition
+                    </span>
+                </div>
+                <div class="progress mt-4" style="height: 10px;">
+                    {% set progress_width = (ces_result.CES / 3 * 100) %}
+                    {% if progress_width > 100 %}
+                        {% set progress_width = 100 %}
+                    {% endif %}
+                    <div class="progress-bar {% if ces_result.CES >= 2 %}bg-danger{% elif ces_result.CES >= 1 %}bg-warning{% else %}bg-success{% endif %}" 
+                         style="width: {{ progress_width }}%"></div>
+                </div>
+                <p class="text-muted mt-2">
+                    Scale: Normal (&lt;1) | Moderate (1-2) | Extreme (&gt;2)
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 5: Graphs -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    5. Forecast Visualization
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                {% if img_base64 %}
+                    <img src="data:image/png;base64,{{ img_base64 }}" 
+                         alt="Forecast Analysis Plot" 
+                         class="img-fluid rounded shadow"
+                         style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                    <div class="mt-3">
+                        <button onclick="window.location.reload()" class="btn btn-sm btn-primary">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <a href="#" onclick="window.open('data:image/png;base64,{{ img_base64 }}', '_blank')" 
+                           class="btn btn-sm btn-success">
+                            <i class="fas fa-external-link-alt me-1"></i>View Full Size
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-chart-line me-2"></i>
+                        <strong>Plot not available</strong><br>
+                        The forecast plot could not be generated. Please try again.
+                    </div>
+                {% endif %}
+                
+                <div class="mt-3 text-muted small">
+                    <i class="fas fa-chart-line"></i> 
+                    Forecast showing next {{ total_months }} months of climate data
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 6: Forecast Trends -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-trend me-2"></i>
+                    6. Forecast Trends & Future CES Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="alert {% if interpretation.rainfall_trend == 'increasing' %}alert-danger{% else %}alert-success{% endif %}">
+                            <i class="fas fa-tint me-2"></i>
+                            <strong>Rainfall Trend:</strong><br>
+                            {{ interpretation.rainfall_trend|title }} over forecast period<br>
+                            <small>Change: {{ "%.1f"|format(forecast_df['Rainfall'].iloc[-1] - forecast_df['Rainfall'].iloc[0]) }} mm</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert {% if interpretation.temp_trend == 'increasing' %}alert-danger{% else %}alert-success{% endif %}">
+                            <i class="fas fa-temperature-high me-2"></i>
+                            <strong>Temperature Trend:</strong><br>
+                            {{ interpretation.temp_trend|title }} over forecast period<br>
+                            <small>Change: {{ "%.1f"|format(forecast_df['Temp_mean'].iloc[-1] - forecast_df['Temp_mean'].iloc[0]) }}°C</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert {% if interpretation.humidity_trend == 'increasing' %}alert-info{% else %}alert-warning{% endif %}">
+                            <i class="fas fa-smog me-2"></i>
+                            <strong>Humidity Trend:</strong><br>
+                            {{ interpretation.humidity_trend|title }} over forecast period<br>
+                            <small>Change: {{ "%.1f"|format(forecast_df['Humidity'].iloc[-1] - forecast_df['Humidity'].iloc[0]) }}%</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="mt-4">Future Climate Extreme Score (CES) Forecast:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>CES Score</th>
+                                <th>Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for idx in range(ces_df|length) %}
+                            <tr>
+                                <td>{{ ces_df.iloc[idx]['Month'] }}</td>
+                                <td>
+                                    <span class="badge {% if ces_df.iloc[idx]['CES'] >= 2 %}bg-danger{% elif ces_df.iloc[idx]['CES'] >= 1 %}bg-warning{% else %}bg-success{% endif %}">
+                                        {{ "%.3f"|format(ces_df.iloc[idx]['CES']) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if ces_df.iloc[idx]['Climate_Condition'] == 'Extreme' %}bg-danger{% elif ces_df.iloc[idx]['Climate_Condition'] == 'Moderate' %}bg-warning{% else %}bg-success{% endif %}">
+                                        {{ ces_df.iloc[idx]['Climate_Condition'] }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 7: Future Climate Interpretation -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-microphone-alt me-2"></i>
+                    7. Future Climate Interpretation
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="alert alert-info h-100">
+                            <h6><i class="fas fa-chart-line me-2"></i>Key Findings:</h6>
+                            <ul class="mb-0">
+                                <li class="mb-2">{% if ces_result.Z_Temperature > 0 %}
+                                    <i class="fas fa-arrow-up text-danger me-2"></i> Current temperature is <strong>ABOVE</strong> historical average
+                                    {% else %}
+                                    <i class="fas fa-arrow-down text-success me-2"></i> Current temperature is <strong>BELOW</strong> historical average
+                                    {% endif %}
+                                </li>
+                                <li class="mb-2">{% if ces_result.CES > 1 %}
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i> <strong>Significant climate anomaly detected</strong>
+                                    {% else %}
+                                    <i class="fas fa-check-circle text-success me-2"></i> Climate conditions within <strong>normal range</strong>
+                                    {% endif %}
+                                </li>
+                                <li class="mb-2">{% if extreme_months > 0 %}
+                                    <i class="fas fa-bolt text-danger me-2"></i> <strong>{{ extreme_months }} extreme climate months</strong> forecasted in next {{ total_months }} months
+                                    {% else %}
+                                    <i class="fas fa-check-circle text-success me-2"></i> No extreme climate events forecasted
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="alert alert-warning h-100">
+                            <h6><i class="fas fa-chart-bar me-2"></i>Statistical Summary:</h6>
+                            <ul class="mb-0">
+                                <li class="mb-2"><i class="fas fa-chart-line me-2"></i> Extreme Climate Months: <strong class="text-danger">{{ extreme_months }}</strong> out of <strong>{{ total_months }}</strong></li>
+                                <li class="mb-2"><i class="fas fa-chart-line me-2"></i> Moderate Climate Months: <strong class="text-warning">{{ moderate_months }}</strong> out of <strong>{{ total_months }}</strong></li>
+                                <li class="mb-2"><i class="fas fa-calculator me-2"></i> CES Standard Deviation: <strong>{{ "%.3f"|format(ces_df['CES'].std()) }}</strong></li>
+                                <li class="mb-2"><i class="fas fa-arrow-up me-2"></i> Max CES Score: <strong>{{ "%.3f"|format(ces_df['CES'].max()) }}</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-success mt-2 p-4">
+                    <h6><i class="fas fa-clipboard-list me-2"></i>Professional Interpretation:</h6>
+                    <hr>
+                    <p class="mb-2">
+                        <strong>Current Conditions:</strong><br>
+                        {% if ces_result.CES >= 2 %}
+                        🔴 The current climate exhibits <strong class="text-danger">EXTREME conditions</strong> with significant deviations from historical norms.
+                        {% elif ces_result.CES >= 1 %}
+                        🟡 The current climate shows <strong class="text-warning">MODERATE variability</strong> requiring careful monitoring.
+                        {% else %}
+                        🟢 The current climate is within <strong class="text-success">NORMAL ranges</strong> with minimal anomalies.
+                        {% endif %}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Future Projections:</strong><br>
+                        {% if extreme_months > total_months * 0.3 %}
+                        🔴 Future projections indicate <strong class="text-danger">INCREASING climate extremeness</strong> with multiple extreme events expected.
+                        {% elif extreme_months > 0 %}
+                        🟡 Future projections show <strong class="text-warning">occasional extreme events</strong> interspersed with normal conditions.
+                        {% else %}
+                        🟢 Future projections suggest <strong class="text-success">STABLE climate conditions</strong> within historical ranges.
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Climate Variability:</strong><br>
+                        {% if interpretation.future_variability %}
+                        📈 The forecast shows <strong>INCREASING climate variability</strong>, suggesting greater uncertainty in long-term patterns.
+                        {% else %}
+                        📊 The forecast shows <strong>STABLE climate patterns</strong> with predictable seasonal variations.
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="alert alert-secondary mt-2 p-4">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Recommendations:</h6>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li class="mb-2"><i class="fas fa-chart-line text-primary me-2"></i> Monitor climate patterns regularly using this analytics system</li>
+                                <li class="mb-2"><i class="fas fa-cloud-rain text-primary me-2"></i> Prepare for potential extreme weather events during forecasted extreme months</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li class="mb-2"><i class="fas fa-chart-bar text-primary me-2"></i> Use CES values for early warning of climate anomalies</li>
+                                <li class="mb-2"><i class="fas fa-leaf text-primary me-2"></i> Consider long-term climate adaptation strategies based on trend analysis</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body text-center">
+                <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-plus-circle me-2"></i>New Prediction
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>View Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#forecastTable').DataTable({
+        pageLength: 12,
+        order: [[0, 'asc']],
+        responsive: true,
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries"
+        }
+    });
+});
+</script>
+{% endblock %}
